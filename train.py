@@ -77,3 +77,5 @@ model.add(Dense(1, activation="sigmoid"))
 model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
 model.fit(X_train, y_train, epochs=20, validation_data=(X_test, y_test))
+
+model.save("promoter_cnn.h5")
