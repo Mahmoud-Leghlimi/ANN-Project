@@ -1,7 +1,9 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Dense, Flatten, Dropout
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, Dense, GlobalMaxPooling1D, Dropout, BatchNormalization
+from sklearn.utils import shuffle
+
 
 
 # DNA one‑hot encoding dictionary
@@ -14,7 +16,7 @@ DNA_MAP = {
 def encode_char(c):
     return DNA_MAP.get(c, [0,0,0,0])
 
-MAX_LEN = 100   # choose your fixed length
+MAX_LEN = 70   # choose your fixed length
 
 def encode_sequence(seq):
     encoded = [encode_char(c) for c in seq]
@@ -35,10 +37,10 @@ def load_dataset(filepath: str):
 
     with open(filepath, "r") as file:
         for line in file:
-            label, seq = line.strip().split("\t")
+            seq, label = line.strip().split(",")
 
             sequences.append(seq)
-            labels.append(1 if label == "+" else 0)
+            labels.append(int(label))
 
     return sequences, labels
 
@@ -59,17 +61,30 @@ y_train = np.array(training_labels)
 X_test = encode_dataset(testing_sequences)
 y_test = np.array(testing_labels)
 
-# print("Training dataset shape:", X_train.shape)
-# print("Training labels shape:", y_train.shape)
-# print("Testing dataset shape:", X_test.shape)
-# print("Testing labels shape:", y_test.shape)
+X_train, y_train = shuffle(X_train, y_train, random_state=42)
+
+
 
 model = Sequential()
-model.add(Conv1D(filters=64, kernel_size=12, activation="relu", input_shape=(MAX_LEN, 4)))
+
+# Block 1
+model.add(Conv1D(filters=64, kernel_size=12, activation="relu", padding="same", input_shape=(MAX_LEN, 4)))
+model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
-model.add(Conv1D(filters=128, kernel_size=6, activation="relu"))
+
+# Block 2
+model.add(Conv1D(filters=128, kernel_size=8, activation="relu", padding="same"))
+model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
-model.add(Flatten())
+
+# Block 3
+model.add(Conv1D(filters=256, kernel_size=6, activation="relu", padding="same"))
+model.add(BatchNormalization())
+
+# Block 4
+model.add(Conv1D(filters=256, kernel_size=3, activation="relu", padding="same"))
+model.add(GlobalMaxPooling1D())
+
 model.add(Dense(64, activation="relu"))
 model.add(Dropout(0.5))
 model.add(Dense(1, activation="sigmoid"))
