@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, Dense, GlobalMaxPooling1D, Dropout, BatchNormalization
 from sklearn.utils import shuffle
+from tensorflow.keras.callbacks import EarlyStopping
 
 
 
@@ -13,6 +14,8 @@ DNA_MAP = {
     "G": [0, 0, 1, 0],
     "T": [0, 0, 0, 1],
 }
+
+
 def encode_char(c):
     return DNA_MAP.get(c, [0,0,0,0])
 
@@ -38,6 +41,7 @@ def load_dataset(filepath: str):
     with open(filepath, "r") as file:
         for line in file:
             seq, label = line.strip().split(",")
+
 
             sequences.append(seq)
             labels.append(int(label))
@@ -68,7 +72,7 @@ X_train, y_train = shuffle(X_train, y_train, random_state=42)
 model = Sequential()
 
 # Block 1
-model.add(Conv1D(filters=64, kernel_size=12, activation="relu", padding="same", input_shape=(MAX_LEN, 4)))
+model.add(Conv1D(filters=64, kernel_size=20, activation="relu", padding="same", input_shape=(MAX_LEN, 4)))
 model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
 
@@ -78,19 +82,25 @@ model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
 
 # Block 3
-model.add(Conv1D(filters=256, kernel_size=6, activation="relu", padding="same"))
+model.add(Conv1D(filters=256, kernel_size=3, activation="relu", padding="same"))
 model.add(BatchNormalization())
 
-# Block 4
-model.add(Conv1D(filters=256, kernel_size=3, activation="relu", padding="same"))
+model.add(Conv1D(filters=128, kernel_size=3, activation="relu", padding="same"))
 model.add(GlobalMaxPooling1D())
 
+
 model.add(Dense(64, activation="relu"))
-model.add(Dropout(0.5))
+model.add(Dropout(0.3))
 model.add(Dense(1, activation="sigmoid"))
 
-model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005), loss="binary_crossentropy", metrics=["accuracy"])
 
-model.fit(X_train, y_train, epochs=20, validation_data=(X_test, y_test))
+early_stop = EarlyStopping(
+    monitor="val_loss",
+    patience=3,
+    restore_best_weights=True
+)
 
-model.save("promoter_cnn.h5")
+model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), callbacks=[early_stop], batch_size=32)
+
+model.save("promoter_cnn.keras")

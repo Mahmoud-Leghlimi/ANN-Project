@@ -11,7 +11,7 @@ DNA_MAP = {
     "T": [0, 0, 0, 1],
 }
 
-MAX_LEN = 100
+MAX_LEN = 70
 
 def encode_char(c):
     return DNA_MAP.get(c, [0,0,0,0])
@@ -36,12 +36,37 @@ def predict_sequence(seq):
 
     if prediction > 0.5:
         print("✅ Promoter detected")
+        return True
     else:
         print("❌ Not a promoter")
+        return False
+
+def find_promoter_location(seq, window_size=100):
+    best_score = 0
+    best_position = -1
+
+    for i in range(len(seq) - window_size + 1):
+        chunk = seq[i:i+window_size]
+
+        encoded = encode_sequence(chunk)
+        encoded = np.expand_dims(encoded, axis=0)
+
+        score = model.predict(encoded)[0][0]
+
+        if score > best_score:
+            best_score = score
+            best_position = i
+
+    return best_position, best_score
 
 
 if __name__ == "__main__":
     sequence = input("Enter DNA sequence: ").upper()
 
     print("\n--- Classification ---")
-    predict_sequence(sequence)
+    if (predict_sequence(sequence)):
+        print("\n--- Promoter Location ---")
+        position, score = find_promoter_location(sequence)
+        print(f"Best promoter location: {position} (score: {score:.4f})")
+    else:
+        print("No promoter found, skipping location search.")
