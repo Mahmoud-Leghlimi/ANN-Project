@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-model = load_model("promoter_cnn.h5")
+model = load_model("promoter_cnn.keras")
 
 DNA_MAP = {
     "A": [1, 0, 0, 0],
