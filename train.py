@@ -19,7 +19,7 @@ DNA_MAP = {
 def encode_char(c):
     return DNA_MAP.get(c, [0,0,0,0])
 
-MAX_LEN = 70   # choose your fixed length
+MAX_LEN = 81   # choose your fixed length
 
 def encode_sequence(seq):
     encoded = [encode_char(c) for c in seq]
@@ -60,6 +60,8 @@ def encode_dataset(sequences):
 training_sequences, training_labels = load_dataset("Data/training.txt")
 testing_sequences, testing_labels = load_dataset("Data/testing.txt")
 
+# augment training only
+
 X_train = encode_dataset(training_sequences)
 y_train = np.array(training_labels)
 X_test = encode_dataset(testing_sequences)
@@ -72,35 +74,36 @@ X_train, y_train = shuffle(X_train, y_train, random_state=42)
 model = Sequential()
 
 # Block 1
-model.add(Conv1D(filters=64, kernel_size=20, activation="relu", padding="same", input_shape=(MAX_LEN, 4)))
+
+model.add(Conv1D(filters=32, kernel_size=24, activation="relu", padding="same", input_shape=(MAX_LEN, 4)))
 model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
 
-# Block 2
-model.add(Conv1D(filters=128, kernel_size=8, activation="relu", padding="same"))
+model.add(Conv1D(filters=64, kernel_size=15, activation="relu", padding="same"))
 model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
+
+model.add(Conv1D(filters=128, kernel_size=10, activation="relu", padding="same"))
+model.add(BatchNormalization())
+model.add(MaxPooling1D(pool_size=2))
+
 
 # Block 3
-model.add(Conv1D(filters=256, kernel_size=3, activation="relu", padding="same"))
-model.add(BatchNormalization())
-
-model.add(Conv1D(filters=128, kernel_size=3, activation="relu", padding="same"))
+model.add(Conv1D(filters=256, kernel_size=6, activation="relu", padding="same"))
 model.add(GlobalMaxPooling1D())
 
-
-model.add(Dense(64, activation="relu"))
-model.add(Dropout(0.3))
+model.add(Dense(128, activation="relu"))
+model.add(Dropout(0.125))
 model.add(Dense(1, activation="sigmoid"))
 
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005), loss="binary_crossentropy", metrics=["accuracy"])
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.005), loss="binary_crossentropy", metrics=["accuracy"])
 
 early_stop = EarlyStopping(
     monitor="val_loss",
-    patience=3,
+    patience=4,
     restore_best_weights=True
 )
 
-model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), callbacks=[early_stop], batch_size=32)
+model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), batch_size=128, callbacks=[early_stop])
 
 model.save("promoter_cnn.keras")
