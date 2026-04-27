@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, Dense, GlobalMaxPooling1D, Dropout, BatchNormalization
 from sklearn.utils import shuffle
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping 
 
 
 
@@ -89,14 +89,14 @@ model.add(MaxPooling1D(pool_size=2))
 
 
 # Block 3
-model.add(Conv1D(filters=256, kernel_size=6, activation="relu", padding="same"))
+model.add(Conv1D(256, kernel_size=6, activation="relu", padding="same"))
 model.add(GlobalMaxPooling1D())
 
 model.add(Dense(128, activation="relu"))
 model.add(Dropout(0.125))
 model.add(Dense(1, activation="sigmoid"))
 
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.005), loss="binary_crossentropy", metrics=["accuracy"])
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.005), loss="binary_crossentropy", metrics=["accuracy", tf.keras.metrics.AUC()])
 
 early_stop = EarlyStopping(
     monitor="val_loss",
@@ -104,6 +104,6 @@ early_stop = EarlyStopping(
     restore_best_weights=True
 )
 
-model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), batch_size=128, callbacks=[early_stop])
+model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), batch_size=64, callbacks=[early_stop])
 
 model.save("promoter_cnn.keras")
