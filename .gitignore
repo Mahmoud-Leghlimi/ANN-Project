@@ -1,3 +1,7 @@
 .venv
 tf-env/
 __pycache__/
+
+
+clean.py
+*.keras
