@@ -68,42 +68,43 @@ X_test = encode_dataset(testing_sequences)
 y_test = np.array(testing_labels)
 
 X_train, y_train = shuffle(X_train, y_train, random_state=42)
+X_test, y_test = shuffle(X_test, y_test, random_state=42)
 
 
 
 model = Sequential()
 
 # Block 1
-
 model.add(Conv1D(filters=32, kernel_size=24, activation="relu", padding="same", input_shape=(MAX_LEN, 4)))
 model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
 
+# Block 2
 model.add(Conv1D(filters=64, kernel_size=15, activation="relu", padding="same"))
 model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
 
+# Block 3
 model.add(Conv1D(filters=128, kernel_size=10, activation="relu", padding="same"))
 model.add(BatchNormalization())
 model.add(MaxPooling1D(pool_size=2))
 
-
-# Block 3
+# Block 4
 model.add(Conv1D(256, kernel_size=6, activation="relu", padding="same"))
 model.add(GlobalMaxPooling1D())
 
-model.add(Dense(128, activation="relu"))
+model.add(Dense(64, activation="relu"))
 model.add(Dropout(0.125))
 model.add(Dense(1, activation="sigmoid"))
 
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.005), loss="binary_crossentropy", metrics=["accuracy", tf.keras.metrics.AUC()])
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.004), loss="binary_crossentropy", metrics=["accuracy", tf.keras.metrics.AUC()])
 
 early_stop = EarlyStopping(
-    monitor="val_loss",
-    patience=4,
+    monitor="val_accuracy",
+    patience=2,
     restore_best_weights=True
 )
 
-model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), batch_size=64, callbacks=[early_stop])
+model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test), batch_size=80, callbacks=[early_stop])
 
 model.save("promoter_cnn.keras")
